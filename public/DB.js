@@ -1,10 +1,9 @@
-const { request } = require("express");
 
 let DB;
 let Budget;
 //create db request
-const req = window.indexedDB.open("budDb", Budget||1)
-request.onupgradeneeded = (event){
+const request = window.indexedDB.open("budDb", Budget||1);
+request.onupgradeneeded = function (event) {
     const {old} = event;
     const newV = event.newV || DB.version;
     DB = event.target.result
@@ -25,3 +24,26 @@ function saveRecord (record ){
     budgetObjectS.add(record)
 }
 //need to open transaction
+function openTransaction(){
+    const transaction = db.transaction(["new_budget"], "readwrite")
+    const budgetObjectS = transaction.objectStore("new_budget")
+    const getAll = budgetObjectS.getAll();
+
+    getAll.onsuccess = function(){
+        if(getAll.result.length > 0){
+            fetch('/api/transaction/bulk',{
+                method:"POST",
+                body: JSON.stringify(getAll.result),
+                headers:{
+                    Accept: "application/json, text/plain, */*",
+                    "Content-Type": "application/json",
+                }
+            })
+            .then(response => response.json())
+            .then(serverResponse)
+
+
+
+        }
+    }
+}

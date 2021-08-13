@@ -6,7 +6,8 @@ const FILES_TO_CACHE = [
     '/index.html',
     '/index.js',
     '/style.css',
-    '/db.js'
+    '/db.js',
+    './service-worker.js'
 
 ]
 
@@ -25,11 +26,30 @@ self.addEventListener('install', (event) => {
     
 })
 
-//fetch event
-// self.addEventListener('fetch', event => {
-//     event.respondWith(
-//       caches.match(event.request).then( response => {
-//         return response || fetch(event.request);
-//       })
-//     );
-//   });
+self.addEventListener('activate', (event) => {
+const current = [STATIC_CACHE, RUN_TIME];
+event.waitUntil(
+    caches.keys()
+    .then((cacheN) => {
+        return cacheN.filter((cacheN) => !current.includes(cacheN));
+    })
+
+
+    .then((cachesDelete) => {
+        return Promise.all(
+          cachesDelete.map((cacheDelete) => {
+            return caches.delete(cacheDelete);
+          })
+        );
+      })
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', event => {
+    event.respondWith(
+      caches.match(event.request).then( response => {
+        return response || fetch(event.request);
+      })
+    );
+  });
